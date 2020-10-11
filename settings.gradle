@@ -1,0 +1,23 @@
+rootProject.name = 'opengles3-book'
+
+void includeModule(String path) {
+    def moduleName = path.substring(path.lastIndexOf('/') + 1)
+    include(moduleName)
+    project(":$moduleName").setProjectDir(file(path))
+}
+
+includeModule('Android_Java/Chapter_2/Hello_Triangle')
+includeModule('Android_Java/Chapter_6/Example_6_3')
+includeModule('Android_Java/Chapter_6/Example_6_6')
+includeModule('Android_Java/Chapter_6/MapBuffers')
+includeModule('Android_Java/Chapter_6/VertexArrayObjects')
+includeModule('Android_Java/Chapter_6/VertexBufferObjects')
+includeModule('Android_Java/Chapter_8/Simple_VertexShader')
+includeModule('Android_Java/Chapter_9/MipMap2D')
+includeModule('Android_Java/Chapter_9/Simple_Texture2D')
+includeModule('Android_Java/Chapter_9/Simple_TextureCubemap')
+includeModule('Android_Java/Chapter_9/TextureWrap')
+includeModule('Android_Java/Chapter_10/MultiTexture')
+includeModule('Android_Java/Chapter_14/ParticleSystem')
+includeModule('Android_Java/Common')
+

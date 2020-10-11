@@ -1,0 +1,41 @@
+buildscript {
+    repositories {
+        google()
+        jcenter()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:3.4.0'
+    }
+}
+
+allprojects {
+    repositories {
+        google()
+        jcenter()
+    }
+}
+
+subprojects {
+    def library = name == 'Common'
+    apply plugin: library ? 'com.android.library' : 'com.android.application'
+
+    android {
+        compileSdkVersion 28
+
+        defaultConfig {
+            minSdkVersion 21
+            targetSdkVersion 28
+        }
+
+        sourceSets.main {
+            java.srcDir('src')
+            res.srcDir('res')
+            manifest.srcFile('AndroidManifest.xml')
+        }
+    }
+
+    if (!library) {
+        android.defaultConfig.applicationId "opengles3.book.${name.uncapitalize()}"
+        dependencies.implementation(project(':Common'))
+    }
+}
