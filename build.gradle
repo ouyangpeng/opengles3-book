@@ -1,15 +1,21 @@
 buildscript {
     repositories {
+        maven { url "http://172.28.2.228:8081/nexus/content/groups/android_public/" }
+        maven { url "http://maven.aliyun.com/nexus/content/groups/public" }
+        maven { url 'https://jitpack.io' }
         google()
         jcenter()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.4.0'
+        classpath 'com.android.tools.build:gradle:4.1.3'
     }
 }
 
 allprojects {
     repositories {
+        maven { url "http://172.28.2.228:8081/nexus/content/groups/android_public/" }
+        maven { url "http://maven.aliyun.com/nexus/content/groups/public" }
+        maven { url 'https://jitpack.io' }
         google()
         jcenter()
     }
