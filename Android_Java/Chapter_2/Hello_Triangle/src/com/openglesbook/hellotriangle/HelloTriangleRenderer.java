@@ -88,6 +88,7 @@ public class HelloTriangleRenderer implements GLSurfaceView.Renderer {
         int[] compiled = new int[1];
 
         // Create the shader object
+        // 调用glCreateShader将根据传入的type参数插件一个新的顶点着色器或者片段着色器
         shader = GLES30.glCreateShader(type);
 
         if (shader == 0) {
@@ -99,14 +100,24 @@ public class HelloTriangleRenderer implements GLSurfaceView.Renderer {
         GLES30.glShaderSource(shader, shaderSrc);
 
         // Compile the shader
+        // 编译着色器
         GLES30.glCompileShader(shader);
 
         // Check the compile status
         // 检测编译时的状态，是编译错误还是编译成功
-        GLES30.glGetShaderiv(shader, GLES30.GL_COMPILE_STATUS, compiled, 0);
 
-        if (compiled[0] == 0) {
+        // pname: 获得信息的参数，可以为
+        //      GL_COMPILE_STATUS
+        //      GL_DELETE_STATUS
+        //      GL_INFO_LOG_LENGTH
+        //      GL_SHADER_SOURCE_LENGTH
+        //      GL_SHADER_TYPE
+        GLES30.glGetShaderiv(shader, GLES30.GL_COMPILE_STATUS, compiled, 0);
+        // 如果着色器编译成功，结果将是GL_TRUE。如果编译失败，结果将为GL_FALSE，编译错误将写入信息日志
+        if (compiled[0] == GLES30.GL_FALSE) {
+            // 用glGetShaderInfoLog检索信息日志
             Log.e(TAG, GLES30.glGetShaderInfoLog(shader));
+            // 删除着色器对象
             GLES30.glDeleteShader(shader);
             return 0;
         }
@@ -191,14 +202,18 @@ public class HelloTriangleRenderer implements GLSurfaceView.Renderer {
         // 由于我们正在创建一个片段着色器，传递的参数是GL_FRAGMENT_SHADER
         fragmentShader = LoadShader(GLES30.GL_FRAGMENT_SHADER, fShaderStr);
 
-        // Create the program object  着色器程序
+        // Create the program object  创建一个程序对象
         programObject = GLES30.glCreateProgram();
 
         if (programObject == 0) {
             return;
         }
 
+        // 在OpenGL ES3.0中，每个程序对象必须连接一个顶点着色器和一个片段着色器
         // 把之前编译的着色器附加到程序对象上
+        // 着色器可以在任何时候连接-----在连接到程序之前不一定需要编译，甚至可以没有源代码。
+        // 唯一要求是：每个程序对象必须有且只有一个顶点着色器和一个片段着色器与之连接
+        // 除了连接着色器之外，你还可以用glDetachShader断开着色器的连接
         GLES30.glAttachShader(programObject, vertexShader);
         GLES30.glAttachShader(programObject, fragmentShader);
 
@@ -206,14 +221,35 @@ public class HelloTriangleRenderer implements GLSurfaceView.Renderer {
         GLES30.glBindAttribLocation(programObject, 0, "vPosition");
 
         // Link the program
+        // 链接操作负责生成最终的可执行的程序。
+        // 一般来说，链接阶段是生成在硬件上运行的最终硬件指令的时候
         GLES30.glLinkProgram(programObject);
 
         // Check the link status  检测链接着色器程序是否失败
+        // pname 获取信息的参数，可以是
+        //      GL_ACTIVE_ATTRIBUTES        返回顶点着色器中活动属性的数量
+        //      GL_ACTIVE_ATTRIBUTE_MAX_LENGTH      返回最大属性名称的最大长度（以字符数表示），这一信息用于确定存储属性名字符串所需的内存量
+        //      GL_ACTIVE_UNIFORM_BLOCK     返回包含活动统一变量的程序中的统一变量块数量
+        //      GL_ACTIVE_UNIFORM_BLOCK_MAX_LENGTH        返回包含活动统一变量的程序中的统一变量块名称的最大长度
+        //      GL_ACTIVE_UNIFORMS      返回活动统一变量的数量
+        //      GL_ACTIVE_UNIFORM_MAX_LENGTH     返回最大统一变量名称的最大长度
+        //      GL_ATTACHED_SHADERS   返回连接到程序对象的着色器数量
+        //      GL_DELETE_STATUS   查询返回程序对象是否已经标记为删除
+        //      GL_LINK_STATUS      检查链接是否成功
+        //      GL_INFO_LOG_LENGTH   程序对象存储的信息日志长度
+        //      GL_LINK_STATUS          链接是否成功
+        //      GL_PROGRAM_BINARY_RETRIEVABLE_HINT  返回一个表示程序目前是否启用二进制检索提示的值
+        //      GL_TRANSFORM_FEEDBACK_BUFFER_MODE   返回GL_SEPARATE_ATTRIBS 或 GL_INTERLEAVED_ATTRIBS 表示变化反馈启用时的缓冲区模式
+        //      GL_TRANSFORM_FEEDBACK_VARYINGS     返回程序的变化反馈模式中捕捉的输出变量
+        //      GL_TRANSFORM_FEEDBACK_VARYING_MAX_LENGTH        返回程序的变化反馈模式中捕捉的输出变量名称的最大长度
+        //      GL_VALIDATE_STATUS  查询最后一个校验操作的状态
         GLES30.glGetProgramiv(programObject, GLES30.GL_LINK_STATUS, linked, 0);
 
         if (linked[0] == 0) {
             Log.e(TAG, "Error linking program:");
+            // 获取着色器对象的信息日志
             Log.e(TAG, GLES30.glGetProgramInfoLog(programObject));
+            // 删除一个程序对象
             GLES30.glDeleteProgram(programObject);
             return;
         }
@@ -247,7 +283,7 @@ public class HelloTriangleRenderer implements GLSurfaceView.Renderer {
 
         // Use the program object
         // 在glUseProgram函数调用之后，每个着色器调用和渲染调用都会使用这个程序对象（也就是之前写的着色器)了。
-        // 当我们渲染一个物体时要使用着色器程序
+        // 当我们渲染一个物体时要使用着色器程序 , 将其设置为活动程序。这样就可以开始渲染了
         GLES30.glUseProgram(mProgramObject);
 
         //  顶点着色器允许我们指定任何以顶点属性为形式的输入。这使其具有很强的灵活性的同时，它还的确意味着我们必须手动指定输入数据的哪一个部分对应顶点着色器的哪一个顶点属性。所以，我们必须在渲染前指定OpenGL该如何解释顶点数据。
