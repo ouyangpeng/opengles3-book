@@ -222,6 +222,7 @@ public class HelloTriangleRenderer implements GLSurfaceView.Renderer {
         // 得到的结果就是一个程序对象，我们可以调用glUseProgram函数，用刚创建的程序对象作为它的参数，以激活这个程序对象
         mProgramObject = programObject;
 
+        // 设置清除颜色
         GLES30.glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
     }
 
@@ -230,9 +231,18 @@ public class HelloTriangleRenderer implements GLSurfaceView.Renderer {
     //
     public void onDrawFrame(GL10 glUnused) {
         // Set the viewport
+        // 通知OpenGL ES 用于绘制的2D渲染表面的原点、宽度和高度。
+        // 在OpenGL ES 中，视口(Viewport) 定义所有OpenGL ES 渲染操作最终显示的2D矩形
+        // 视口(Viewport) 由原点坐标(x,y)和宽度(width) 、高度(height)定义。
         GLES30.glViewport(0, 0, mWidth, mHeight);
 
         // Clear the color buffer
+        // 清除屏幕
+        // 在OpenGL ES中，绘图中涉及多种缓冲区类型：颜色、深度、模板。
+        // 这个例子，绘制三角形，只向颜色缓冲区中绘制图形。在每个帧的开始，我们用glClear函数清除颜色缓冲区
+        // 缓冲区将用glClearColor指定的颜色清除。
+        // 这个例子，我们调用了GLES30.glClearColor(1.0f, 1.0f, 1.0f, 0.0f); 因此屏幕清为白色。
+        // 清除颜色应该由应用程序在调用颜色缓冲区的glClear之前设置。
         GLES30.glClear(GLES30.GL_COLOR_BUFFER_BIT);
 
         // Use the program object
