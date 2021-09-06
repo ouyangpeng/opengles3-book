@@ -51,105 +51,111 @@ import android.content.Context;
 import android.opengl.GLES30;
 import android.opengl.GLSurfaceView;
 
-public class Example6_3Renderer implements GLSurfaceView.Renderer
-{
+public class Example6_3Renderer implements GLSurfaceView.Renderer {
+    // Handle to a program object
+    private int mProgramObject;
 
-   ///
-   // Constructor
-   //
-   public Example6_3Renderer ( Context context )
-   {
+    // Additional member variables
+    private int mWidth;
+    private int mHeight;
+    private FloatBuffer mVertices;
 
-      mVertices = ByteBuffer.allocateDirect ( mVerticesData.length * 4 )
-                  .order ( ByteOrder.nativeOrder() ).asFloatBuffer();
-      mVertices.put ( mVerticesData ).position ( 0 );
-   }
+    private final float[] mVerticesData =
+            {
+                    0.0f, 0.5f, 0.0f,   // v0
+                    -0.5f, -0.5f, 0.0f, // v1
+                    0.5f, -0.5f, 0.0f   // v2
+            };
 
-   ///
-   // Initialize the shader and program object
-   //
-   public void onSurfaceCreated ( GL10 glUnused, EGLConfig config )
-   {
-      String vShaderStr =
-         "#version 300 es                            \n" +
-         "layout(location = 0) in vec4 a_color;      \n" +
-         "layout(location = 1) in vec4 a_position;   \n" +
-         "out vec4 v_color;                          \n" +
-         "void main()                                \n" +
-         "{                                          \n" +
-         "    v_color = a_color;                     \n" +
-         "    gl_Position = a_position;              \n" +
-         "}";
+    ///
+    // Constructor
+    //
+    public Example6_3Renderer(Context context) {
 
+        mVertices = ByteBuffer.allocateDirect(mVerticesData.length * 4)
+                .order(ByteOrder.nativeOrder()).asFloatBuffer();
+        mVertices.put(mVerticesData).position(0);
+    }
 
-      String fShaderStr =
-         "#version 300 es            \n" +
-         "precision mediump float;   \n" +
-         "in vec4 v_color;           \n" +
-         "out vec4 o_fragColor;      \n" +
-         "void main()                \n" +
-         "{                          \n" +
-         "    o_fragColor = v_color; \n" +
-         "}" ;
-
-      // Load the shaders and get a linked program object
-      mProgramObject = ESShader.loadProgram ( vShaderStr, fShaderStr );
-
-      GLES30.glClearColor ( 1.0f, 1.0f, 1.0f, 0.0f );
-   }
-
-   // /
-   // Draw a triangle using the shader pair created in onSurfaceCreated()
-   //
-   public void onDrawFrame ( GL10 glUnused )
-   {
-      // Set the viewport
-      GLES30.glViewport ( 0, 0, mWidth, mHeight );
-
-      // Clear the color buffer
-      GLES30.glClear ( GLES30.GL_COLOR_BUFFER_BIT );
-
-      // Use the program object
-      GLES30.glUseProgram ( mProgramObject );
-
-      // Set the vertex color to red
-      GLES30.glVertexAttrib4f ( 0, 1.0f, 0.0f, 0.0f, 1.0f );
-
-      // Load the vertex position
-      mVertices.position ( 0 );
-      GLES30.glVertexAttribPointer ( 1, 3, GLES30.GL_FLOAT,
-                                     false,
-                                     0, mVertices );
-
-      GLES30.glEnableVertexAttribArray ( 1 );
-
-      GLES30.glDrawArrays ( GLES30.GL_TRIANGLES, 0, 3 );
-
-      GLES30.glDisableVertexAttribArray ( 1 );
-   }
-
-   ///
-   // Handle surface changes
-   //
-   public void onSurfaceChanged ( GL10 glUnused, int width, int height )
-   {
-      mWidth = width;
-      mHeight = height;
-   }
+    ///
+    // Initialize the shader and program object
+    //
+    public void onSurfaceCreated(GL10 glUnused, EGLConfig config) {
+        String vShaderStr =
+                "#version 300 es                            \n" +
+                        "layout(location = 0) in vec4 a_color;      \n" +
+                        "layout(location = 1) in vec4 a_position;   \n" +
+                        "out vec4 v_color;                          \n" +
+                        "void main()                                \n" +
+                        "{                                          \n" +
+                        "    v_color = a_color;                     \n" +
+                        "    gl_Position = a_position;              \n" +
+                        "}";
 
 
-   // Handle to a program object
-   private int mProgramObject;
+        String fShaderStr =
+                "#version 300 es            \n" +
+                        "precision mediump float;   \n" +
+                        "in vec4 v_color;           \n" +
+                        "out vec4 o_fragColor;      \n" +
+                        "void main()                \n" +
+                        "{                          \n" +
+                        "    o_fragColor = v_color; \n" +
+                        "}";
 
-   // Additional member variables
-   private int mWidth;
-   private int mHeight;
-   private FloatBuffer mVertices;
+        // Load the shaders and get a linked program object
+        // 得到的结果就是一个程序对象，我们可以调用glUseProgram函数，用刚创建的程序对象作为它的参数，以激活这个程序对象
+        mProgramObject = ESShader.loadProgram(vShaderStr, fShaderStr);
 
-   private final float[] mVerticesData =
-   {
-      0.0f,  0.5f, 0.0f, // v0
-      -0.5f, -0.5f, 0.0f, // v1
-      0.5f, -0.5f, 0.0f  // v2
-   };
+        // 设置清除颜色
+        GLES30.glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
+    }
+
+    // /
+    // Draw a triangle using the shader pair created in onSurfaceCreated()
+    //
+    public void onDrawFrame(GL10 glUnused) {
+        // Set the viewport
+        GLES30.glViewport(0, 0, mWidth, mHeight);
+
+        // Clear the color buffer
+        GLES30.glClear(GLES30.GL_COLOR_BUFFER_BIT);
+
+        // Use the program object
+        GLES30.glUseProgram(mProgramObject);
+
+        // Set the vertex color to red
+        // 设置顶点的颜色值
+        // 加载index指定的通用顶点属性，加载(x,y,z,w)
+        // opengl各个坐标系理解与转换公式 https://blog.csdn.net/grace_yi/article/details/109341926
+        // x，y，z，w：指的不是四维，其中w指的是缩放因子
+        // X轴为水平方向，Y轴为垂直方向，X和Y相互垂直
+        // Z轴同时垂直于X和Y轴。Z轴的实际意义代表着三维物体的深度
+        GLES30.glVertexAttrib4f(0, 1.0f, 0.0f, 0.0f, 1.0f);
+
+        // Load the vertex position
+        mVertices.position(0);
+
+        //  指定通用顶点属性数组
+        GLES30.glVertexAttribPointer(1, 3, GLES30.GL_FLOAT, false, 0, mVertices);
+
+        // 启用 通用顶点属性数组
+        GLES30.glEnableVertexAttribArray(1);
+
+        // glDrawArrays函数第一个参数是我们打算绘制的OpenGL图元的类型。我们希望绘制的是一个三角形，这里传递GL_TRIANGLES给它。
+        // 第二个参数指定了顶点数组的起始索引，我们这里填0。
+        // 最后一个参数指定我们打算绘制多少个顶点，这里是3（我们只从我们的数据中渲染一个三角形，它只有3个顶点长）。
+        GLES30.glDrawArrays(GLES30.GL_TRIANGLES, 0, 3);
+
+        // 禁用 通用顶点属性数组
+        GLES30.glDisableVertexAttribArray(1);
+    }
+
+    ///
+    // Handle surface changes
+    //
+    public void onSurfaceChanged(GL10 glUnused, int width, int height) {
+        mWidth = width;
+        mHeight = height;
+    }
 }
