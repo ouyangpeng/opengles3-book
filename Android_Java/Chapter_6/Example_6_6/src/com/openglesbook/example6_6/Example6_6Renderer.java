@@ -171,6 +171,17 @@ public class Example6_6Renderer implements GLSurfaceView.Renderer
 
       GLES30.glBindBuffer ( GLES30.GL_ELEMENT_ARRAY_BUFFER, mVBOIds[2] );
 
+      //        public static final int GL_POINTS                                  = 0x0000;
+      //        public static final int GL_LINES                                   = 0x0001;
+      //        public static final int GL_LINE_LOOP                               = 0x0002;
+      //        public static final int GL_LINE_STRIP                              = 0x0003;
+      //        public static final int GL_TRIANGLES                               = 0x0004;
+      //        public static final int GL_TRIANGLE_STRIP                          = 0x0005;
+      //        public static final int GL_TRIANGLE_FAN                            = 0x0006;
+
+      //        public static final int GL_UNSIGNED_BYTE                           = 0x1401;
+      //        public static final int GL_UNSIGNED_SHORT                          = 0x1403;
+      //        public static final int GL_UNSIGNED_INT                            = 0x1405;
       GLES30.glDrawElements ( GLES30.GL_TRIANGLES, numIndices,
                               GLES30.GL_UNSIGNED_SHORT, 0 );
 

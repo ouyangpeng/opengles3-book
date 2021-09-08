@@ -50,163 +50,160 @@ import android.opengl.GLES30;
 import android.opengl.GLSurfaceView;
 import android.os.SystemClock;
 
-public class SimpleVertexShaderRenderer implements GLSurfaceView.Renderer
-{
+public class SimpleVertexShaderRenderer implements GLSurfaceView.Renderer {
+    // Handle to a program object
+    private int mProgramObject;
 
-   ///
-   // Constructor
-   //
-   public SimpleVertexShaderRenderer ( Context context )
-   {
+    // Uniform locations
+    private int mMVPLoc;
 
-   }
+    // Vertex data
+    private ESShapes mCube = new ESShapes();
 
-   ///
-   // Initialize the shader and program object
-   //
-   public void onSurfaceCreated ( GL10 glUnused, EGLConfig config )
-   {
-      String vShaderStr =
-         "#version 300 es 							 \n" +
-         "uniform mat4 u_mvpMatrix;                   \n" +
-         "layout(location = 0) in vec4 a_position;    \n" +
-         "layout(location = 1) in vec4 a_color;       \n" +
-         "out vec4 v_color;                           \n" +
-         "void main()                                 \n" +
-         "{                                           \n" +
-         "   v_color = a_color;                       \n" +
-         "   gl_Position = u_mvpMatrix * a_position;  \n" +
-         "}                                           \n";
+    // Rotation angle
+    private float mAngle;
 
-      String fShaderStr =
-         "#version 300 es 							 \n" +
-         "precision mediump float;                    \n" +
-         "in vec4 v_color;                            \n" +
-         "layout(location = 0) out vec4 outColor;     \n" +
-         "void main()                                 \n" +
-         "{                                           \n" +
-         "  outColor = v_color;                       \n" +
-         "}                                           \n";
+    // MVP matrix
+    private ESTransform mMVPMatrix = new ESTransform();
 
-      // Load the shaders and get a linked program object
-      mProgramObject = ESShader.loadProgram ( vShaderStr, fShaderStr );
+    // Additional Member variables
+    private int mWidth;
+    private int mHeight;
+    private long mLastTime = 0;
 
-      // Get the uniform locations
-      mMVPLoc = GLES30.glGetUniformLocation ( mProgramObject, "u_mvpMatrix" );
+    ///
+    // Constructor
+    //
+    public SimpleVertexShaderRenderer(Context context) {
 
-      // Generate the vertex data
-      mCube.genCube ( 1.0f );
+    }
 
-      // Starting rotation angle for the cube
-      mAngle = 45.0f;
+    ///
+    // Initialize the shader and program object
+    //
+    public void onSurfaceCreated(GL10 glUnused, EGLConfig config) {
+        String vShaderStr =
+                "#version 300 es 							 \n" +
+                "uniform mat4 u_mvpMatrix;                   \n" +
+                "layout(location = 0) in vec4 a_position;    \n" +
+                "layout(location = 1) in vec4 a_color;       \n" +
+                "out vec4 v_color;                           \n" +
+                "void main()                                 \n" +
+                "{                                           \n" +
+                "   v_color = a_color;                       \n" +
+                "   gl_Position = u_mvpMatrix * a_position;  \n" +
+                "}                                           \n";
 
-      GLES30.glClearColor ( 1.0f, 1.0f, 1.0f, 0.0f );
-   }
+        String fShaderStr =
+                "#version 300 es 							 \n" +
+                "precision mediump float;                    \n" +
+                "in vec4 v_color;                            \n" +
+                "layout(location = 0) out vec4 outColor;     \n" +
+                "void main()                                 \n" +
+                "{                                           \n" +
+                "  outColor = v_color;                       \n" +
+                "}                                           \n";
 
-   private void update()
-   {
-      if ( mLastTime == 0 )
-      {
-         mLastTime = SystemClock.uptimeMillis();
-      }
+        // Load the shaders and get a linked program object
+        mProgramObject = ESShader.loadProgram(vShaderStr, fShaderStr);
 
-      long curTime = SystemClock.uptimeMillis();
-      long elapsedTime = curTime - mLastTime;
-      float deltaTime = elapsedTime / 1000.0f;
-      mLastTime = curTime;
+        // Get the uniform locations
+        // mvp矩阵 用 glGetUniformLocation加载到统一变量中，供着色器使用
+        mMVPLoc = GLES30.glGetUniformLocation(mProgramObject, "u_mvpMatrix");
 
-      ESTransform perspective = new ESTransform();
-      ESTransform modelview = new ESTransform();
-      float aspect;
+        // Generate the vertex data
+        mCube.genCube(1.0f);
 
-      // Compute a rotation angle based on time to rotate the cube
-      mAngle += ( deltaTime * 40.0f );
+        // Starting rotation angle for the cube
+        mAngle = 45.0f;
 
-      if ( mAngle >= 360.0f )
-      {
-         mAngle -= 360.0f;
-      }
+        GLES30.glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
+    }
 
-      // Compute the window aspect ratio
-      aspect = ( float ) mWidth / ( float ) mHeight;
+    private void update() {
+        if (mLastTime == 0) {
+            mLastTime = SystemClock.uptimeMillis();
+        }
 
-      // Generate a perspective matrix with a 60 degree FOV
-      perspective.matrixLoadIdentity();
-      perspective.perspective ( 60.0f, aspect, 1.0f, 20.0f );
+        long curTime = SystemClock.uptimeMillis();
+        long elapsedTime = curTime - mLastTime;
+        float deltaTime = elapsedTime / 1000.0f;
+        mLastTime = curTime;
 
-      // Generate a model view matrix to rotate/translate the cube
-      modelview.matrixLoadIdentity();
+        ESTransform perspective = new ESTransform();
+        ESTransform modelview = new ESTransform();
+        float aspect;
 
-      // Translate away from the viewer
-      modelview.translate ( 0.0f, 0.0f, -2.0f );
+        // Compute a rotation angle based on time to rotate the cube
+        mAngle += (deltaTime * 40.0f);
 
-      // Rotate the cube
-      modelview.rotate ( mAngle, 1.0f, 0.0f, 1.0f );
+        if (mAngle >= 360.0f) {
+            mAngle -= 360.0f;
+        }
 
-      // Compute the final MVP by multiplying the
-      // modevleiw and perspective matrices together
-      mMVPMatrix.matrixMultiply ( modelview.get(), perspective.get() );
-   }
+        // Compute the window aspect ratio
+        aspect = (float) mWidth / (float) mHeight;
 
-   ///
-   // Draw a triangle using the shader pair created in onSurfaceCreated()
-   //
-   public void onDrawFrame ( GL10 glUnused )
-   {
-      update();
+        // Generate a perspective matrix with a 60 degree FOV
+        // and near and far clip planes at 1.0 and 20.0
+        perspective.matrixLoadIdentity();
+        perspective.perspective(60.0f, aspect, 1.0f, 20.0f);
 
-      // Set the viewport
-      GLES30.glViewport ( 0, 0, mWidth, mHeight );
+        // Generate a model view matrix to rotate/translate the cube
+        // 在modelview矩阵中加载一个单位矩阵
+        modelview.matrixLoadIdentity();
 
-      // Clear the color buffer
-      GLES30.glClear ( GLES30.GL_COLOR_BUFFER_BIT );
+        // Translate away from the viewer
+        // 单位矩阵结合一个平移，使物体远离观看者
+        modelview.translate(0.0f, 0.0f, -2.0f);
 
-      // Use the program object
-      GLES30.glUseProgram ( mProgramObject );
+        // Rotate the cube
+        // 对modelview矩阵进行一次旋转，使物体饶向量(1.0,0.0,1.0) 以根据时间更新的角度连续旋转物体
+        modelview.rotate(mAngle, 1.0f, 0.0f, 1.0f);
 
-      // Load the vertex data
-      GLES30.glVertexAttribPointer ( 0, 3, GLES30.GL_FLOAT, false,
-                                     0, mCube.getVertices() );
-      GLES30.glEnableVertexAttribArray ( 0 );
+        // Compute the final MVP by multiplying the
+        // modevleiw and perspective matrices together
+        // 计算MVP矩阵--- 模型-视图矩阵和投影矩阵的乘积
+        mMVPMatrix.matrixMultiply(modelview.get(), perspective.get());
+    }
 
-      // Set the vertex color to red
-      GLES30.glVertexAttrib4f ( 1, 1.0f, 0.0f, 0.0f, 1.0f );
+    ///
+    // Draw a triangle using the shader pair created in onSurfaceCreated()
+    //
+    public void onDrawFrame(GL10 glUnused) {
+        update();
 
-      // Load the MVP matrix
-      GLES30.glUniformMatrix4fv ( mMVPLoc, 1, false,
-                                  mMVPMatrix.getAsFloatBuffer() );
+        // Set the viewport
+        GLES30.glViewport(0, 0, mWidth, mHeight);
 
-      // Draw the cube
-      GLES30.glDrawElements ( GLES30.GL_TRIANGLES, mCube.getNumIndices(),
-                              GLES30.GL_UNSIGNED_SHORT, mCube.getIndices() );
-   }
+        // Clear the color buffer
+        GLES30.glClear(GLES30.GL_COLOR_BUFFER_BIT);
 
-   ///
-   // Handle surface changes
-   //
-   public void onSurfaceChanged ( GL10 glUnused, int width, int height )
-   {
-      mWidth = width;
-      mHeight = height;
-   }
+        // Use the program object
+        GLES30.glUseProgram(mProgramObject);
 
-   // Handle to a program object
-   private int mProgramObject;
+        // Load the vertex data
+        GLES30.glVertexAttribPointer(0, 3, GLES30.GL_FLOAT, false,
+                0, mCube.getVertices());
+        GLES30.glEnableVertexAttribArray(0);
 
-   // Uniform locations
-   private int mMVPLoc;
+        // Set the vertex color to red
+        GLES30.glVertexAttrib4f(1, 1.0f, 0.0f, 0.0f, 1.0f);
 
-   // Vertex data
-   private ESShapes mCube = new ESShapes();
+        // Load the MVP matrix
+        GLES30.glUniformMatrix4fv(mMVPLoc, 1, false,
+                mMVPMatrix.getAsFloatBuffer());
 
-   // Rotation angle
-   private float mAngle;
+        // Draw the cube
+        GLES30.glDrawElements(GLES30.GL_TRIANGLES, mCube.getNumIndices(),
+                GLES30.GL_UNSIGNED_SHORT, mCube.getIndices());
+    }
 
-   // MVP matrix
-   private ESTransform mMVPMatrix = new ESTransform();
-
-   // Additional Member variables
-   private int mWidth;
-   private int mHeight;
-   private long mLastTime = 0;
+    ///
+    // Handle surface changes
+    //
+    public void onSurfaceChanged(GL10 glUnused, int width, int height) {
+        mWidth = width;
+        mHeight = height;
+    }
 }

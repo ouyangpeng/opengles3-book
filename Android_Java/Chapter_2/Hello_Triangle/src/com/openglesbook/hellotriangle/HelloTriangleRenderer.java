@@ -312,6 +312,13 @@ public class HelloTriangleRenderer implements GLSurfaceView.Renderer {
         // glDrawArrays函数第一个参数是我们打算绘制的OpenGL图元的类型。我们希望绘制的是一个三角形，这里传递GL_TRIANGLES给它。
         // 第二个参数指定了顶点数组的起始索引，我们这里填0。
         // 最后一个参数指定我们打算绘制多少个顶点，这里是3（我们只从我们的数据中渲染一个三角形，它只有3个顶点长）。
+        //        public static final int GL_POINTS                                  = 0x0000;
+        //        public static final int GL_LINES                                   = 0x0001;
+        //        public static final int GL_LINE_LOOP                               = 0x0002;
+        //        public static final int GL_LINE_STRIP                              = 0x0003;
+        //        public static final int GL_TRIANGLES                               = 0x0004;
+        //        public static final int GL_TRIANGLE_STRIP                          = 0x0005;
+        //        public static final int GL_TRIANGLE_FAN                            = 0x0006;
         GLES30.glDrawArrays(GLES30.GL_TRIANGLES, 0, 3);
     }
 
