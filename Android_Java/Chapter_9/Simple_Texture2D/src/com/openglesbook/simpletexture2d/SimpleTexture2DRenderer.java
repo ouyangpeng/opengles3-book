@@ -53,179 +53,159 @@ import android.content.Context;
 import android.opengl.GLES30;
 import android.opengl.GLSurfaceView;
 
-public class SimpleTexture2DRenderer implements GLSurfaceView.Renderer
-{
+public class SimpleTexture2DRenderer implements GLSurfaceView.Renderer {
+    private Context mContext;
 
-   ///
-   // Constructor
-   //
-   public SimpleTexture2DRenderer ( Context context )
-   {
+    // Handle to a program object
+    private int mProgramObject;
 
-      mVertices = ByteBuffer.allocateDirect ( mVerticesData.length * 4 )
-                  .order ( ByteOrder.nativeOrder() ).asFloatBuffer();
-      mVertices.put ( mVerticesData ).position ( 0 );
-      mIndices = ByteBuffer.allocateDirect ( mIndicesData.length * 2 )
-                 .order ( ByteOrder.nativeOrder() ).asShortBuffer();
-      mIndices.put ( mIndicesData ).position ( 0 );
-   }
+    // Sampler location
+    private int mSamplerLoc;
 
-   //
-   // Create a simple 2x2 texture image with four different colors
-   //
-   private int createSimpleTexture2D( )
-   {
-      // Texture object handle
-      int[] textureId = new int[1];
+    // Texture handle
+    private int mTextureId;
 
-      // 2x2 Image, 3 bytes per pixel (R, G, B)
-      byte[] pixels =
-      {
-         ( byte ) 0xff,   0,   0, // Red
-         0, ( byte ) 0xff,   0, // Green
-         0,   0, ( byte ) 0xff, // Blue
-         ( byte ) 0xff, ( byte ) 0xff,   0 // Yellow
-      };
-      ByteBuffer pixelBuffer = ByteBuffer.allocateDirect ( 4 * 3 );
-      pixelBuffer.put ( pixels ).position ( 0 );
+    // Additional member variables
+    private int mWidth;
+    private int mHeight;
+    private FloatBuffer mVertices;
+    private ShortBuffer mIndices;
 
-      // Use tightly packed data
-      GLES30.glPixelStorei ( GLES30.GL_UNPACK_ALIGNMENT, 1 );
+    private final float[] mVerticesData =
+            {
+                    -0.5f, 0.5f, 0.0f, // Position 0
+                    0.0f, 0.0f, // TexCoord 0
 
-      //  Generate a texture object
-      GLES30.glGenTextures ( 1, textureId, 0 );
+                    -0.5f, -0.5f, 0.0f, // Position 1
+                    0.0f, 1.0f, // TexCoord 1
 
-      // Bind the texture object
-      GLES30.glBindTexture ( GLES30.GL_TEXTURE_2D, textureId[0] );
+                    0.5f, -0.5f, 0.0f, // Position 2
+                    1.0f, 1.0f, // TexCoord 2
 
-      //  Load the texture
-      GLES30.glTexImage2D ( GLES30.GL_TEXTURE_2D, 0, GLES30.GL_RGB, 2, 2, 0, GLES30.GL_RGB, GLES30.GL_UNSIGNED_BYTE, pixelBuffer );
+                    0.5f, 0.5f, 0.0f, // Position 3
+                    1.0f, 0.0f // TexCoord 3
+            };
 
-      // Set the filtering mode
-      GLES30.glTexParameteri ( GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MIN_FILTER, GLES30.GL_NEAREST );
-      GLES30.glTexParameteri ( GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MAG_FILTER, GLES30.GL_NEAREST );
+    private final short[] mIndicesData =
+            {
+                    0, 1, 2, 0, 2, 3
+            };
 
-      return textureId[0];
-   }
+    ///
+    // Constructor
+    //
+    public SimpleTexture2DRenderer(Context context) {
+        mContext = context;
 
-   ///
-   // Initialize the shader and program object
-   //
-   public void onSurfaceCreated ( GL10 glUnused, EGLConfig config )
-   {
-      String vShaderStr =
-         "#version 300 es              				\n" +
-         "layout(location = 0) in vec4 a_position;   \n" +
-         "layout(location = 1) in vec2 a_texCoord;   \n" +
-         "out vec2 v_texCoord;     	  				\n" +
-         "void main()                  				\n" +
-         "{                            				\n" +
-         "   gl_Position = a_position; 				\n" +
-         "   v_texCoord = a_texCoord;  				\n" +
-         "}                            				\n";
+        mVertices = ByteBuffer.allocateDirect(mVerticesData.length * 4)
+                .order(ByteOrder.nativeOrder()).asFloatBuffer();
+        mVertices.put(mVerticesData).position(0);
+        mIndices = ByteBuffer.allocateDirect(mIndicesData.length * 2)
+                .order(ByteOrder.nativeOrder()).asShortBuffer();
+        mIndices.put(mIndicesData).position(0);
+    }
 
-      String fShaderStr =
-         "#version 300 es                                     \n" +
-         "precision mediump float;                            \n" +
-         "in vec2 v_texCoord;                            	 \n" +
-         "layout(location = 0) out vec4 outColor;             \n" +
-         "uniform sampler2D s_texture;                        \n" +
-         "void main()                                         \n" +
-         "{                                                   \n" +
-         "  outColor = texture( s_texture, v_texCoord );      \n" +
-         "}                                                   \n";
+    //
+    // Create a simple 2x2 texture image with four different colors
+    //
+    private int createSimpleTexture2D() {
+        // Texture object handle
+        int[] textureId = new int[1];
 
-      // Load the shaders and get a linked program object
-      mProgramObject = ESShader.loadProgram ( vShaderStr, fShaderStr );
+        // 2x2 Image, 3 bytes per pixel (R, G, B)
+        byte[] pixels =
+                {
+                        (byte) 0xff, 0, 0, // Red
+                        0, (byte) 0xff, 0, // Green
+                        0, 0, (byte) 0xff, // Blue
+                        (byte) 0xff, (byte) 0xff, 0 // Yellow
+                };
+        ByteBuffer pixelBuffer = ByteBuffer.allocateDirect(4 * 3);
+        pixelBuffer.put(pixels).position(0);
 
-      // Get the sampler location
-      mSamplerLoc = GLES30.glGetUniformLocation ( mProgramObject, "s_texture" );
+        // Use tightly packed data
+        GLES30.glPixelStorei(GLES30.GL_UNPACK_ALIGNMENT, 1);
 
-      // Load the texture
-      mTextureId = createSimpleTexture2D ();
+        //  Generate a texture object
+        GLES30.glGenTextures(1, textureId, 0);
 
-      GLES30.glClearColor ( 1.0f, 1.0f, 1.0f, 0.0f );
-   }
+        // Bind the texture object
+        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, textureId[0]);
 
-   // /
-   // Draw a triangle using the shader pair created in onSurfaceCreated()
-   //
-   public void onDrawFrame ( GL10 glUnused )
-   {
-      // Set the viewport
-      GLES30.glViewport ( 0, 0, mWidth, mHeight );
+        //  Load the texture
+        GLES30.glTexImage2D(GLES30.GL_TEXTURE_2D, 0, GLES30.GL_RGB, 2, 2, 0, GLES30.GL_RGB, GLES30.GL_UNSIGNED_BYTE, pixelBuffer);
 
-      // Clear the color buffer
-      GLES30.glClear ( GLES30.GL_COLOR_BUFFER_BIT );
+        // Set the filtering mode
+        GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MIN_FILTER, GLES30.GL_NEAREST);
+        GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MAG_FILTER, GLES30.GL_NEAREST);
 
-      // Use the program object
-      GLES30.glUseProgram ( mProgramObject );
+        return textureId[0];
+    }
 
-      // Load the vertex position
-      mVertices.position ( 0 );
-      GLES30.glVertexAttribPointer ( 0, 3, GLES30.GL_FLOAT,
-                                     false,
-                                     5 * 4, mVertices );
-      // Load the texture coordinate
-      mVertices.position ( 3 );
-      GLES30.glVertexAttribPointer ( 1, 2, GLES30.GL_FLOAT,
-                                     false,
-                                     5 * 4,
-                                     mVertices );
+    ///
+    // Initialize the shader and program object
+    //
+    public void onSurfaceCreated(GL10 glUnused, EGLConfig config) {
+        // Load the shaders and get a linked program object
+        mProgramObject = ESShader.loadProgramFromAsset( mContext,
+                "shaders/vertexShader.vert",
+                "shaders/fragmentShader.frag");
 
-      GLES30.glEnableVertexAttribArray ( 0 );
-      GLES30.glEnableVertexAttribArray ( 1 );
+        // Get the sampler location
+        mSamplerLoc = GLES30.glGetUniformLocation(mProgramObject, "s_texture");
 
-      // Bind the texture
-      GLES30.glActiveTexture ( GLES30.GL_TEXTURE0 );
-      GLES30.glBindTexture ( GLES30.GL_TEXTURE_2D, mTextureId );
+        // Load the texture  加载纹理
+        mTextureId = createSimpleTexture2D();
 
-      // Set the sampler texture unit to 0
-      GLES30.glUniform1i ( mSamplerLoc, 0 );
+        GLES30.glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
+    }
 
-      GLES30.glDrawElements ( GLES30.GL_TRIANGLES, 6, GLES30.GL_UNSIGNED_SHORT, mIndices );
-   }
+    // /
+    // Draw a triangle using the shader pair created in onSurfaceCreated()
+    //
+    public void onDrawFrame(GL10 glUnused) {
+        // Set the viewport
+        GLES30.glViewport(0, 0, mWidth, mHeight);
 
-   ///
-   // Handle surface changes
-   //
-   public void onSurfaceChanged ( GL10 glUnused, int width, int height )
-   {
-      mWidth = width;
-      mHeight = height;
-   }
+        // Clear the color buffer
+        GLES30.glClear(GLES30.GL_COLOR_BUFFER_BIT);
 
+        // Use the program object
+        GLES30.glUseProgram(mProgramObject);
 
-   // Handle to a program object
-   private int mProgramObject;
+        // Load the vertex position
+        mVertices.position(0);
+        GLES30.glVertexAttribPointer(0, 3, GLES30.GL_FLOAT,
+                false,
+                5 * 4, mVertices);
+        // Load the texture coordinate
+        mVertices.position(3);
+        GLES30.glVertexAttribPointer(1, 2, GLES30.GL_FLOAT,
+                false,
+                5 * 4,
+                mVertices);
 
-   // Sampler location
-   private int mSamplerLoc;
+        GLES30.glEnableVertexAttribArray(0);
+        GLES30.glEnableVertexAttribArray(1);
 
-   // Texture handle
-   private int mTextureId;
+        // Bind the texture
+        GLES30.glActiveTexture(GLES30.GL_TEXTURE0);
+        // 纹理绑定到纹理单元0
+        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, mTextureId);
 
-   // Additional member variables
-   private int mWidth;
-   private int mHeight;
-   private FloatBuffer mVertices;
-   private ShortBuffer mIndices;
+        // Set the sampler texture unit to 0
+        // 采样器设置为纹理单元0
+        GLES30.glUniform1i(mSamplerLoc, 0);
 
-   private final float[] mVerticesData =
-   {
-      -0.5f, 0.5f, 0.0f, // Position 0
-      0.0f, 0.0f, // TexCoord 0
-      -0.5f, -0.5f, 0.0f, // Position 1
-      0.0f, 1.0f, // TexCoord 1
-      0.5f, -0.5f, 0.0f, // Position 2
-      1.0f, 1.0f, // TexCoord 2
-      0.5f, 0.5f, 0.0f, // Position 3
-      1.0f, 0.0f // TexCoord 3
-   };
+        GLES30.glDrawElements(GLES30.GL_TRIANGLES, 6, GLES30.GL_UNSIGNED_SHORT, mIndices);
+    }
 
-   private final short[] mIndicesData =
-   {
-      0, 1, 2, 0, 2, 3
-   };
+    ///
+    // Handle surface changes
+    //
+    public void onSurfaceChanged(GL10 glUnused, int width, int height) {
+        mWidth = width;
+        mHeight = height;
+    }
 
 }

@@ -229,6 +229,8 @@ public class ESShader
       // Read vertex shader from assets
       vertShaderSrc = readShader ( context, vertexShaderFileName );
 
+      System.out.println("  vertShaderSrc = " +   vertShaderSrc);
+
       if ( vertShaderSrc == null )
       {
          return 0;
@@ -236,6 +238,8 @@ public class ESShader
 
       // Read fragment shader from assets
       fragShaderSrc = readShader ( context, fragShaderFileName );
+
+      System.out.println("  fragShaderSrc = " +   fragShaderSrc);
 
       if ( fragShaderSrc == null )
       {
