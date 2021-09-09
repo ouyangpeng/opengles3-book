@@ -52,6 +52,7 @@ import android.opengl.GLES30;
 import android.opengl.GLSurfaceView;
 
 public class Example6_3Renderer implements GLSurfaceView.Renderer {
+    private Context mContext;
     // Handle to a program object
     private int mProgramObject;
 
@@ -71,7 +72,7 @@ public class Example6_3Renderer implements GLSurfaceView.Renderer {
     // Constructor
     //
     public Example6_3Renderer(Context context) {
-
+        mContext = context;
         mVertices = ByteBuffer.allocateDirect(mVerticesData.length * 4)
                 .order(ByteOrder.nativeOrder()).asFloatBuffer();
         mVertices.put(mVerticesData).position(0);
@@ -81,31 +82,11 @@ public class Example6_3Renderer implements GLSurfaceView.Renderer {
     // Initialize the shader and program object
     //
     public void onSurfaceCreated(GL10 glUnused, EGLConfig config) {
-        String vShaderStr =
-                "#version 300 es                            \n" +
-                        "layout(location = 0) in vec4 a_color;      \n" +
-                        "layout(location = 1) in vec4 a_position;   \n" +
-                        "out vec4 v_color;                          \n" +
-                        "void main()                                \n" +
-                        "{                                          \n" +
-                        "    v_color = a_color;                     \n" +
-                        "    gl_Position = a_position;              \n" +
-                        "}";
-
-
-        String fShaderStr =
-                "#version 300 es            \n" +
-                        "precision mediump float;   \n" +
-                        "in vec4 v_color;           \n" +
-                        "out vec4 o_fragColor;      \n" +
-                        "void main()                \n" +
-                        "{                          \n" +
-                        "    o_fragColor = v_color; \n" +
-                        "}";
-
         // Load the shaders and get a linked program object
         // 得到的结果就是一个程序对象，我们可以调用glUseProgram函数，用刚创建的程序对象作为它的参数，以激活这个程序对象
-        mProgramObject = ESShader.loadProgram(vShaderStr, fShaderStr);
+        mProgramObject = ESShader.loadProgramFromAsset(mContext,
+                "shaders/vertexShader.vert",
+                "shaders/fragmentShader.frag");
 
         // 设置清除颜色
         GLES30.glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
