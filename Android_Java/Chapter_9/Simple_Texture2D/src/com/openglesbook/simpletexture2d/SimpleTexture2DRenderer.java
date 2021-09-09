@@ -147,7 +147,7 @@ public class SimpleTexture2DRenderer implements GLSurfaceView.Renderer {
     //
     public void onSurfaceCreated(GL10 glUnused, EGLConfig config) {
         // Load the shaders and get a linked program object
-        mProgramObject = ESShader.loadProgramFromAsset( mContext,
+        mProgramObject = ESShader.loadProgramFromAsset(mContext,
                 "shaders/vertexShader.vert",
                 "shaders/fragmentShader.frag");
 

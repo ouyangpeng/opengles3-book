@@ -53,6 +53,8 @@ import android.opengl.GLES30;
 import android.opengl.GLSurfaceView;
 
 public class TextureWrapRenderer implements GLSurfaceView.Renderer {
+    private Context mContext;
+
     // Handle to a program object
     private int mProgramObject;
 
@@ -95,7 +97,7 @@ public class TextureWrapRenderer implements GLSurfaceView.Renderer {
     // Constructor
     //
     public TextureWrapRenderer(Context context) {
-
+        mContext = context;
         mVertices = ByteBuffer.allocateDirect(mVerticesData.length * 4)
                 .order(ByteOrder.nativeOrder()).asFloatBuffer();
         mVertices.put(mVerticesData).position(0);
@@ -170,32 +172,10 @@ public class TextureWrapRenderer implements GLSurfaceView.Renderer {
     // Initialize the shader and program object
     //
     public void onSurfaceCreated(GL10 glUnused, EGLConfig config) {
-        String vShaderStr =
-                "#version 300 es                            \n" +
-                        "uniform float u_offset;      				\n" +
-                        "layout(location = 0) in vec4 a_position;   \n" +
-                        "layout(location = 1) in vec2 a_texCoord;   \n" +
-                        "out vec2 v_texCoord;     					\n" +
-                        "void main()                  				\n" +
-                        "{                            				\n" +
-                        "   gl_Position = a_position; 				\n" +
-                        "   gl_Position.x += u_offset;				\n" +
-                        "   v_texCoord = a_texCoord;  				\n" +
-                        "}                            				\n";
-
-        String fShaderStr =
-                "#version 300 es                                     \n" +
-                        "precision mediump float;                            \n" +
-                        "in vec2 v_texCoord;                            	 \n" +
-                        "layout(location = 0) out vec4 outColor;             \n" +
-                        "uniform sampler2D s_texture;                        \n" +
-                        "void main()                                         \n" +
-                        "{                                                   \n" +
-                        "   outColor = texture( s_texture, v_texCoord );  	 \n" +
-                        "}                                                   \n";
-
         // Load the shaders and get a linked program object
-        mProgramObject = ESShader.loadProgram(vShaderStr, fShaderStr);
+        mProgramObject = ESShader.loadProgramFromAsset(mContext,
+                "shaders/vertexShader.vert",
+                "shaders/fragmentShader.frag");
 
         // Get the sampler location
         mSamplerLoc = GLES30.glGetUniformLocation(mProgramObject, "s_texture");
