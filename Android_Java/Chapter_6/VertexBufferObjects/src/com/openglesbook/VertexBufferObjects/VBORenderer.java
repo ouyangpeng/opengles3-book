@@ -53,6 +53,7 @@ import android.opengl.GLES30;
 import android.opengl.GLSurfaceView;
 
 public class VBORenderer implements GLSurfaceView.Renderer {
+    private Context mContext;
     // Handle to a program object
     private int mProgramObject;
 
@@ -98,6 +99,7 @@ public class VBORenderer implements GLSurfaceView.Renderer {
     // Constructor
     //
     public VBORenderer(Context context) {
+        mContext = context;
         mVertices = ByteBuffer.allocateDirect(mVerticesData.length * 4)
                 .order(ByteOrder.nativeOrder()).asFloatBuffer();
         mVertices.put(mVerticesData).position(0);
@@ -120,30 +122,10 @@ public class VBORenderer implements GLSurfaceView.Renderer {
     // Initialize the shader and program object
     //
     public void onSurfaceCreated(GL10 glUnused, EGLConfig config) {
-        String vShaderStr =
-                "#version 300 es                            \n" +
-                        "layout(location = 0) in vec4 a_position;   \n" +
-                        "layout(location = 1) in vec4 a_color;      \n" +
-                        "out vec4 v_color;                          \n" +
-                        "void main()                                \n" +
-                        "{                                          \n" +
-                        "    v_color = a_color;                     \n" +
-                        "    gl_Position = a_position;              \n" +
-                        "}";
-
-
-        String fShaderStr =
-                "#version 300 es            \n" +
-                        "precision mediump float;   \n" +
-                        "in vec4 v_color;           \n" +
-                        "out vec4 o_fragColor;      \n" +
-                        "void main()                \n" +
-                        "{                          \n" +
-                        "    o_fragColor = v_color; \n" +
-                        "}";
-
         // Load the shaders and get a linked program object
-        mProgramObject = ESShader.loadProgram(vShaderStr, fShaderStr);
+        mProgramObject = ESShader.loadProgramFromAsset(mContext,
+                "shaders/vertexShader.vert",
+                "shaders/fragmentShader.frag");
 
         mVBOIds[0] = 0;
         mVBOIds[1] = 0;
