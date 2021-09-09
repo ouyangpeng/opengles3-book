@@ -189,6 +189,7 @@ public class SimpleTexture2DRenderer implements GLSurfaceView.Renderer {
         GLES30.glEnableVertexAttribArray(1);
 
         // Bind the texture
+        // 激活当前纹理单元，以便后续的glBindTexture调用将纹理绑定到当前活动单元
         GLES30.glActiveTexture(GLES30.GL_TEXTURE0);
         // 纹理绑定到纹理单元0
         GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, mTextureId);

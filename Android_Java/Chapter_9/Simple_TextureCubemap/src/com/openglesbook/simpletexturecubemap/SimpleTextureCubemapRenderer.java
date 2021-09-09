@@ -45,6 +45,7 @@ import android.opengl.GLES30;
 import android.opengl.GLSurfaceView;
 
 public class SimpleTextureCubemapRenderer implements GLSurfaceView.Renderer {
+    private Context mContext;
     // Handle to a program object
     private int mProgramObject;
 
@@ -65,13 +66,14 @@ public class SimpleTextureCubemapRenderer implements GLSurfaceView.Renderer {
     // Constructor
     //
     public SimpleTextureCubemapRenderer(Context context) {
+        mContext = context;
     }
 
     ///
     // Create a simple cubemap with a 1x1 face with a different
     // color for each face
     private int createSimpleTextureCubemap() {
-        int[] textureId = new int[1];
+        int[] textureIdArray = new int[1];
 
         // Face 0 - Red
         byte[] cubePixels0 = {127, 0, 0};
@@ -89,10 +91,10 @@ public class SimpleTextureCubemapRenderer implements GLSurfaceView.Renderer {
         ByteBuffer cubePixels = ByteBuffer.allocateDirect(3);
 
         // Generate a texture object
-        GLES30.glGenTextures(1, textureId, 0);
+        GLES30.glGenTextures(1, textureIdArray, 0);
 
         // Bind the texture object
-        GLES30.glBindTexture(GLES30.GL_TEXTURE_CUBE_MAP, textureId[0]);
+        GLES30.glBindTexture(GLES30.GL_TEXTURE_CUBE_MAP, textureIdArray[0]);
 
         // Load the cube face - Positive X
         cubePixels.put(cubePixels0).position(0);
@@ -128,37 +130,17 @@ public class SimpleTextureCubemapRenderer implements GLSurfaceView.Renderer {
         GLES30.glTexParameteri(GLES30.GL_TEXTURE_CUBE_MAP, GLES30.GL_TEXTURE_MIN_FILTER, GLES30.GL_NEAREST);
         GLES30.glTexParameteri(GLES30.GL_TEXTURE_CUBE_MAP, GLES30.GL_TEXTURE_MAG_FILTER, GLES30.GL_NEAREST);
 
-        return textureId[0];
+        return textureIdArray[0];
     }
 
     ///
     // Initialize the shader and program object
     //
     public void onSurfaceCreated(GL10 glUnused, EGLConfig config) {
-        String vShaderStr =
-                        "#version 300 es              				\n" +
-                        "layout(location = 0) in vec4 a_position;   \n" +
-                        "layout(location = 1) in vec3 a_normal;     \n" +
-                        "out vec3 v_normal;       	  				\n" +
-                        "void main()                  				\n" +
-                        "{                            				\n" +
-                        "   gl_Position = a_position; 				\n" +
-                        "   v_normal = a_normal;      				\n" +
-                        "}                            				\n";
-
-        String fShaderStr =
-                        "#version 300 es              						 \n" +
-                        "precision mediump float;                            \n" +
-                        "in vec3 v_normal;                              	 \n" +
-                        "layout(location = 0) out vec4 outColor;             \n" +
-                        "uniform samplerCube s_texture;                      \n" +
-                        "void main()                                         \n" +
-                        "{                                                   \n" +
-                        "  outColor = texture( s_texture, v_normal );		 \n" +
-                        "}                                                   \n";
-
         // Load the shaders and get a linked program object
-        mProgramObject = ESShader.loadProgram(vShaderStr, fShaderStr);
+        mProgramObject = ESShader.loadProgramFromAsset(mContext,
+                "shaders/vertexShader.vert",
+                "shaders/fragmentShader.frag");
 
         // Get the sampler location
         mSamplerLoc = GLES30.glGetUniformLocation(mProgramObject, "s_texture");
