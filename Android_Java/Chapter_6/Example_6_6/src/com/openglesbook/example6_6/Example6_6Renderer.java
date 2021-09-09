@@ -53,196 +53,171 @@ import android.content.Context;
 import android.opengl.GLES30;
 import android.opengl.GLSurfaceView;
 
-public class Example6_6Renderer implements GLSurfaceView.Renderer
-{
+public class Example6_6Renderer implements GLSurfaceView.Renderer {
+    private Context mContext;
+    // Handle to a program object
+    private int mProgramObject;
 
-   ///
-   // Constructor
-   //
-   public Example6_6Renderer ( Context context )
-   {
-      mVertices = ByteBuffer.allocateDirect ( mVerticesData.length * 4 )
-                  .order ( ByteOrder.nativeOrder() ).asFloatBuffer();
-      mVertices.put ( mVerticesData ).position ( 0 );
+    // Additional member variables
+    private int mWidth;
+    private int mHeight;
+    private FloatBuffer mVertices;
+    private FloatBuffer mColors;
+    private ShortBuffer mIndices;
 
-      mColors = ByteBuffer.allocateDirect ( mColorData.length * 4 )
-                .order ( ByteOrder.nativeOrder() ).asFloatBuffer();
-      mColors.put ( mColorData ).position ( 0 );
+    // VertexBufferObject Ids
+    private int[] mVBOIds = new int[3];
 
-      mIndices = ByteBuffer.allocateDirect ( mIndicesData.length * 2 )
-                 .order ( ByteOrder.nativeOrder() ).asShortBuffer();
-      mIndices.put ( mIndicesData ).position ( 0 );
-   }
+    // 3 vertices, with (x,y,z) ,(r, g, b, a) per-vertex
+    private final float[] mVerticesData =
+            {
+                    0.0f, 0.5f, 0.0f, // v0
+                    -0.5f, -0.5f, 0.0f, // v1
+                    0.5f, -0.5f, 0.0f  // v2
+            };
 
-   ///
-   // Initialize the shader and program object
-   //
-   public void onSurfaceCreated ( GL10 glUnused, EGLConfig config )
-   {
-      String vShaderStr =
-         "#version 300 es                            \n" +
-         "layout(location = 0) in vec4 a_position;   \n" +
-         "layout(location = 1) in vec4 a_color;      \n" +
-         "out vec4 v_color;                          \n" +
-         "void main()                                \n" +
-         "{                                          \n" +
-         "    v_color = a_color;                     \n" +
-         "    gl_Position = a_position;              \n" +
-         "}";
+    private final short[] mIndicesData =
+            {
+                    0, 1, 2
+            };
 
+    private final float[] mColorData =
+            {
+                    1.0f, 0.0f, 0.0f, 1.0f,   // c0
+                    0.0f, 1.0f, 0.0f, 1.0f,   // c1
+                    0.0f, 0.0f, 1.0f, 1.0f    // c2
+            };
 
-      String fShaderStr =
-         "#version 300 es            \n" +
-         "precision mediump float;   \n" +
-         "in vec4 v_color;           \n" +
-         "out vec4 o_fragColor;      \n" +
-         "void main()                \n" +
-         "{                          \n" +
-         "    o_fragColor = v_color; \n" +
-         "}" ;
+    final int VERTEX_POS_SIZE = 3; // x, y and z
+    final int VERTEX_COLOR_SIZE = 4; // r, g, b, and a
 
-      // Load the shaders and get a linked program object
-      mProgramObject = ESShader.loadProgram ( vShaderStr, fShaderStr );
+    final int VERTEX_POS_INDX = 0;
+    final int VERTEX_COLOR_INDX = 1;
 
-      mVBOIds[0] = 0;
-      mVBOIds[1] = 0;
-      mVBOIds[2] = 0;
+    private int[] vtxStrides =
+            {
+                    VERTEX_POS_SIZE * 4,
+                    VERTEX_COLOR_SIZE * 4
+            };
 
-      GLES30.glClearColor ( 1.0f, 1.0f, 1.0f, 0.0f );
-   }
+    ///
+    // Constructor
+    //
+    public Example6_6Renderer(Context context) {
+        mContext = context;
+        mVertices = ByteBuffer.allocateDirect(mVerticesData.length * 4)
+                .order(ByteOrder.nativeOrder()).asFloatBuffer();
+        mVertices.put(mVerticesData).position(0);
 
-   // /
-   // Draw a triangle using the shader pair created in onSurfaceCreated()
-   //
-   public void onDrawFrame ( GL10 glUnused )
-   {
-      // Set the viewport
-      GLES30.glViewport ( 0, 0, mWidth, mHeight );
+        mColors = ByteBuffer.allocateDirect(mColorData.length * 4)
+                .order(ByteOrder.nativeOrder()).asFloatBuffer();
+        mColors.put(mColorData).position(0);
 
-      // Clear the color buffer
-      GLES30.glClear ( GLES30.GL_COLOR_BUFFER_BIT );
+        mIndices = ByteBuffer.allocateDirect(mIndicesData.length * 2)
+                .order(ByteOrder.nativeOrder()).asShortBuffer();
+        mIndices.put(mIndicesData).position(0);
+    }
 
-      // Use the program object
-      GLES30.glUseProgram ( mProgramObject );
+    ///
+    // Initialize the shader and program object
+    //
+    public void onSurfaceCreated(GL10 glUnused, EGLConfig config) {
 
-      drawPrimitiveWithVBOs();
-   }
+        // Load the shaders and get a linked program object
+        mProgramObject = ESShader.loadProgramFromAsset(mContext,
+                "shaders/vertexShader.vert",
+                "shaders/fragmentShader.frag");
 
-   private void drawPrimitiveWithVBOs()
-   {
-      int numVertices = 3;
-      int numIndices = 3;
+        mVBOIds[0] = 0;
+        mVBOIds[1] = 0;
+        mVBOIds[2] = 0;
 
-      // mVBOIds[0] - used to store vertex position
-      // mVBOIds[1] - used to store vertex color
-      // mVBOIds[2] - used to store element indices
-      if ( mVBOIds[0] == 0 && mVBOIds[1] == 0 && mVBOIds[2] == 0 )
-      {
-         // Only allocate on the first draw
-         GLES30.glGenBuffers ( 3, mVBOIds, 0 );
+        GLES30.glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
+    }
 
-         mVertices.position ( 0 );
-         GLES30.glBindBuffer ( GLES30.GL_ARRAY_BUFFER, mVBOIds[0] );
-         GLES30.glBufferData ( GLES30.GL_ARRAY_BUFFER, vtxStrides[0] * numVertices,
-                               mVertices, GLES30.GL_STATIC_DRAW );
+    // /
+    // Draw a triangle using the shader pair created in onSurfaceCreated()
+    //
+    public void onDrawFrame(GL10 glUnused) {
+        // Set the viewport
+        GLES30.glViewport(0, 0, mWidth, mHeight);
 
-         mColors.position ( 0 );
-         GLES30.glBindBuffer ( GLES30.GL_ARRAY_BUFFER, mVBOIds[1] );
-         GLES30.glBufferData ( GLES30.GL_ARRAY_BUFFER, vtxStrides[1] * numVertices,
-                               mColors, GLES30.GL_STATIC_DRAW );
+        // Clear the color buffer
+        GLES30.glClear(GLES30.GL_COLOR_BUFFER_BIT);
 
-         mIndices.position ( 0 );
-         GLES30.glBindBuffer ( GLES30.GL_ELEMENT_ARRAY_BUFFER, mVBOIds[2] );
-         GLES30.glBufferData ( GLES30.GL_ELEMENT_ARRAY_BUFFER, 2 * numIndices,
-                               mIndices, GLES30.GL_STATIC_DRAW );
-      }
+        // Use the program object
+        GLES30.glUseProgram(mProgramObject);
 
-      GLES30.glBindBuffer ( GLES30.GL_ARRAY_BUFFER, mVBOIds[0] );
+        drawPrimitiveWithVBOs();
+    }
 
-      GLES30.glEnableVertexAttribArray ( VERTEX_POS_INDX );
-      GLES30.glVertexAttribPointer ( VERTEX_POS_INDX, VERTEX_POS_SIZE,
-                                     GLES30.GL_FLOAT, false, vtxStrides[0], 0 );
+    private void drawPrimitiveWithVBOs() {
+        int numVertices = 3;
+        int numIndices = 3;
 
-      GLES30.glBindBuffer ( GLES30.GL_ARRAY_BUFFER, mVBOIds[1] );
+        // mVBOIds[0] - used to store vertex position
+        // mVBOIds[1] - used to store vertex color
+        // mVBOIds[2] - used to store element indices
+        if (mVBOIds[0] == 0 && mVBOIds[1] == 0 && mVBOIds[2] == 0) {
+            // Only allocate on the first draw
+            GLES30.glGenBuffers(3, mVBOIds, 0);
 
-      GLES30.glEnableVertexAttribArray ( VERTEX_COLOR_INDX );
-      GLES30.glVertexAttribPointer ( VERTEX_COLOR_INDX, VERTEX_COLOR_SIZE,
-                                     GLES30.GL_FLOAT, false, vtxStrides[1], 0 );
+            mVertices.position(0);
+            GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, mVBOIds[0]);
+            GLES30.glBufferData(GLES30.GL_ARRAY_BUFFER, vtxStrides[0] * numVertices,
+                    mVertices, GLES30.GL_STATIC_DRAW);
 
-      GLES30.glBindBuffer ( GLES30.GL_ELEMENT_ARRAY_BUFFER, mVBOIds[2] );
+            mColors.position(0);
+            GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, mVBOIds[1]);
+            GLES30.glBufferData(GLES30.GL_ARRAY_BUFFER, vtxStrides[1] * numVertices,
+                    mColors, GLES30.GL_STATIC_DRAW);
 
-      //        public static final int GL_POINTS                                  = 0x0000;
-      //        public static final int GL_LINES                                   = 0x0001;
-      //        public static final int GL_LINE_LOOP                               = 0x0002;
-      //        public static final int GL_LINE_STRIP                              = 0x0003;
-      //        public static final int GL_TRIANGLES                               = 0x0004;
-      //        public static final int GL_TRIANGLE_STRIP                          = 0x0005;
-      //        public static final int GL_TRIANGLE_FAN                            = 0x0006;
+            mIndices.position(0);
+            GLES30.glBindBuffer(GLES30.GL_ELEMENT_ARRAY_BUFFER, mVBOIds[2]);
+            GLES30.glBufferData(GLES30.GL_ELEMENT_ARRAY_BUFFER, 2 * numIndices,
+                    mIndices, GLES30.GL_STATIC_DRAW);
+        }
 
-      //        public static final int GL_UNSIGNED_BYTE                           = 0x1401;
-      //        public static final int GL_UNSIGNED_SHORT                          = 0x1403;
-      //        public static final int GL_UNSIGNED_INT                            = 0x1405;
-      GLES30.glDrawElements ( GLES30.GL_TRIANGLES, numIndices,
-                              GLES30.GL_UNSIGNED_SHORT, 0 );
+        GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, mVBOIds[0]);
 
-      GLES30.glDisableVertexAttribArray ( VERTEX_POS_INDX );
-      GLES30.glDisableVertexAttribArray ( VERTEX_COLOR_INDX );
+        GLES30.glEnableVertexAttribArray(VERTEX_POS_INDX);
+        GLES30.glVertexAttribPointer(VERTEX_POS_INDX, VERTEX_POS_SIZE,
+                GLES30.GL_FLOAT, false, vtxStrides[0], 0);
 
-      GLES30.glBindBuffer ( GLES30.GL_ARRAY_BUFFER, 0 );
-      GLES30.glBindBuffer ( GLES30.GL_ELEMENT_ARRAY_BUFFER, 0 );
-   }
+        GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, mVBOIds[1]);
 
-   ///
-   // Handle surface changes
-   //
-   public void onSurfaceChanged ( GL10 glUnused, int width, int height )
-   {
-      mWidth = width;
-      mHeight = height;
-   }
+        GLES30.glEnableVertexAttribArray(VERTEX_COLOR_INDX);
+        GLES30.glVertexAttribPointer(VERTEX_COLOR_INDX, VERTEX_COLOR_SIZE,
+                GLES30.GL_FLOAT, false, vtxStrides[1], 0);
 
-   // Handle to a program object
-   private int mProgramObject;
+        GLES30.glBindBuffer(GLES30.GL_ELEMENT_ARRAY_BUFFER, mVBOIds[2]);
 
-   // Additional member variables
-   private int mWidth;
-   private int mHeight;
-   private FloatBuffer mVertices;
-   private FloatBuffer mColors;
-   private ShortBuffer mIndices;
+        //        public static final int GL_POINTS                                  = 0x0000;
+        //        public static final int GL_LINES                                   = 0x0001;
+        //        public static final int GL_LINE_LOOP                               = 0x0002;
+        //        public static final int GL_LINE_STRIP                              = 0x0003;
+        //        public static final int GL_TRIANGLES                               = 0x0004;
+        //        public static final int GL_TRIANGLE_STRIP                          = 0x0005;
+        //        public static final int GL_TRIANGLE_FAN                            = 0x0006;
 
-   // VertexBufferObject Ids
-   private int [] mVBOIds = new int[3];
+        //        public static final int GL_UNSIGNED_BYTE                           = 0x1401;
+        //        public static final int GL_UNSIGNED_SHORT                          = 0x1403;
+        //        public static final int GL_UNSIGNED_INT                            = 0x1405;
+        GLES30.glDrawElements(GLES30.GL_TRIANGLES, numIndices,
+                GLES30.GL_UNSIGNED_SHORT, 0);
 
-   // 3 vertices, with (x,y,z) ,(r, g, b, a) per-vertex
-   private final float[] mVerticesData =
-   {
-      0.0f,  0.5f, 0.0f, // v0
-      -0.5f, -0.5f, 0.0f, // v1
-      0.5f, -0.5f, 0.0f  // v2
-   };
+        GLES30.glDisableVertexAttribArray(VERTEX_POS_INDX);
+        GLES30.glDisableVertexAttribArray(VERTEX_COLOR_INDX);
 
-   private final short[] mIndicesData =
-   {
-      0, 1, 2
-   };
+        GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, 0);
+        GLES30.glBindBuffer(GLES30.GL_ELEMENT_ARRAY_BUFFER, 0);
+    }
 
-   private final float [] mColorData =
-   {
-      1.0f, 0.0f, 0.0f, 1.0f,   // c0
-      0.0f, 1.0f, 0.0f, 1.0f,   // c1
-      0.0f, 0.0f, 1.0f, 1.0f    // c2
-   };
-
-   final int VERTEX_POS_SIZE   = 3; // x, y and z
-   final int VERTEX_COLOR_SIZE = 4; // r, g, b, and a
-
-   final int VERTEX_POS_INDX   = 0;
-   final int VERTEX_COLOR_INDX = 1;
-
-   private int vtxStrides[] =
-   {
-      VERTEX_POS_SIZE * 4,
-      VERTEX_COLOR_SIZE * 4
-   };
+    ///
+    // Handle surface changes
+    //
+    public void onSurfaceChanged(GL10 glUnused, int width, int height) {
+        mWidth = width;
+        mHeight = height;
+    }
 }
