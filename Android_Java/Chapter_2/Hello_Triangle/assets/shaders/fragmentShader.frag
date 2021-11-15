@@ -1,5 +1,6 @@
-// 表示OpenGL ES着色器语言V3.00
 #version 300 es
+// 表示OpenGL ES着色器语言V3.00
+
 // 声明着色器中浮点变量的默认精度
 precision mediump float;
 // 声明一个输出变量fragColor，这是一个4分量的向量，
