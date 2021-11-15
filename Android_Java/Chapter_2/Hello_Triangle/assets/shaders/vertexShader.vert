@@ -1,5 +1,5 @@
-// 表示OpenGL ES着色器语言V3.00
 #version 300 es
+// 表示OpenGL ES着色器语言V3.00
 
 // 使用in关键字，在顶点着色器中声明所有的输入顶点属性(Input Vertex Attribute)。
 // 声明一个输入属性数组：一个名为vPosition的4分量向量
